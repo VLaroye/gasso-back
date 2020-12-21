@@ -8,6 +8,11 @@ import (
 	"net/http"
 )
 
+func RegisterUserHandlers(router *mux.Router, service *userService) {
+	router.HandleFunc("/users", service.ListUsers).Methods("GET")
+	router.HandleFunc("/users", service.RegisterUser).Methods("POST")
+}
+
 type User struct {
 	ID string `json:"id"`
 	Email string `json:"email"`
@@ -28,11 +33,6 @@ func toUsers(users []*model.User) []*User {
 		result[i] = &User{ID: user.GetId(), Email: user.GetEmail()}
 	}
 	return result
-}
-
-func (u *userService) RegisterHandlers(router *mux.Router) {
-	router.HandleFunc("/users", u.ListUsers).Methods("GET")
-	router.HandleFunc("/users", u.RegisterUser).Methods("POST")
 }
 
 func (u *userService) ListUsers(w http.ResponseWriter, r *http.Request) {

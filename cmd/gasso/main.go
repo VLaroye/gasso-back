@@ -14,17 +14,20 @@ import (
 
 func main() {
 	router := mux.NewRouter()
-	dbt, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+	database, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
 
-	userRepo := db.NewUserRepository(dbt)
+	// Init user repo + service + usecase
+	userRepo := db.NewUserRepository(database)
 	userService := service.NewUserService(userRepo)
 	userUsecase := usecase.NewUserUsecase(userRepo, userService)
-
 	httpUserService := http2.NewUserService(userUsecase)
-	httpUserService.RegisterHandlers(router)
 
+	// Handlers
+	http2.RegisterUserHandlers(router, httpUserService)
+
+	// Run server
 	log.Fatal(http.ListenAndServe(":5000", router))
 }

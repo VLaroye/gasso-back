@@ -36,7 +36,17 @@ func (ur *userRepository) FindAll() ([]*model.User, error) {
 }
 
 func (ur *userRepository) FindByEmail(email string) (*model.User, error) {
-	return nil, nil
+	var user User
+	result := ur.db.Where("email = ?", email).First(&user)
+
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, result.Error
+	}
+
+	return model.NewUser(user.ID, user.Email), nil
 }
 
 func (ur *userRepository) Save(user *model.User) error {
