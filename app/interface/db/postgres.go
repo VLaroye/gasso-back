@@ -6,7 +6,7 @@ import (
 )
 
 type User struct {
-	ID string `gorm:`
+	ID string
 	Email string
 }
 
@@ -40,5 +40,14 @@ func (ur *userRepository) FindByEmail(email string) (*model.User, error) {
 }
 
 func (ur *userRepository) Save(user *model.User) error {
+	result := ur.db.Create(&User{
+		ID:    user.GetId(),
+		Email: user.GetEmail(),
+	})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
 	return nil
 }

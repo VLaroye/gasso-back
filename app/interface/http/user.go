@@ -31,7 +31,8 @@ func toUsers(users []*model.User) []*User {
 }
 
 func (u *userService) RegisterHandlers(router *mux.Router) {
-	router.HandleFunc("/users", u.ListUsers)
+	router.HandleFunc("/users", u.ListUsers).Methods("GET")
+	router.HandleFunc("/users", u.RegisterUser).Methods("POST")
 }
 
 func (u *userService) ListUsers(w http.ResponseWriter, r *http.Request) {
@@ -43,12 +44,7 @@ func (u *userService) ListUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := u.userUsecase.ListUsers()
 
 	if err != nil {
-		// TODO: Handle this error
-		_ = json.NewEncoder(w).Encode(listUsersResponseType{
-			Error: err,
-			Users: nil,
-		})
-		return
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	_ = json.NewEncoder(w).Encode(listUsersResponseType{
@@ -58,6 +54,19 @@ func (u *userService) ListUsers(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func (u *userService) RegisterUser(email string) error {
-	return nil
+func (u *userService) RegisterUser(w http.ResponseWriter, r *http.Request) {
+	type registerUserRequest struct {
+		Email string
+	}
+
+	var request registerUserRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := u.userUsecase.RegisterUser(request.Email); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
