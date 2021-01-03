@@ -6,7 +6,7 @@ import (
 )
 
 type User struct {
-	ID string
+	ID    string
 	Email string
 }
 
@@ -59,5 +59,45 @@ func (ur *userRepository) Save(user *model.User) error {
 		return result.Error
 	}
 
+	return nil
+}
+
+type Account struct {
+	Id   string
+	Name string
+}
+
+type accountRepository struct {
+	db *gorm.DB
+}
+
+func NewAccountRepository(db *gorm.DB) *accountRepository {
+	return &accountRepository{
+		db: db,
+	}
+}
+
+// TODO: Implement "real" account repository functions
+func (ar *accountRepository) FindAll() ([]*model.Account, error) {
+	return nil, nil
+}
+
+func (ar *accountRepository) FindByName(name string) (*model.Account, error) {
+	return nil, nil
+}
+
+func (ar *accountRepository) FindById(id string) (*model.Account, error) {
+	return nil, nil
+}
+
+func (ar *accountRepository) Create(account *model.Account) error {
+	return nil
+}
+
+func (ar *accountRepository) Update(account *model.Account) error {
+	return nil
+}
+
+func (ar *accountRepository) Delete(id string) error {
 	return nil
 }

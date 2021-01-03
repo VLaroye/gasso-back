@@ -1,15 +1,16 @@
 package main
 
 import (
+	"log"
+	"net/http"
+
 	"github.com/VLaroye/gasso-back/app/domain/service"
 	"github.com/VLaroye/gasso-back/app/interface/db"
-	http2 "github.com/VLaroye/gasso-back/app/interface/http"
+	httpInterface "github.com/VLaroye/gasso-back/app/interface/http"
 	"github.com/VLaroye/gasso-back/app/usecase"
 	"github.com/gorilla/mux"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"log"
-	"net/http"
 )
 
 func main() {
@@ -23,10 +24,10 @@ func main() {
 	userRepo := db.NewUserRepository(database)
 	userService := service.NewUserService(userRepo)
 	userUsecase := usecase.NewUserUsecase(userRepo, userService)
-	httpUserService := http2.NewUserService(userUsecase)
+	httpUserService := httpInterface.NewUserService(userUsecase)
 
 	// Handlers
-	http2.RegisterUserHandlers(router, httpUserService)
+	httpInterface.RegisterUserHandlers(router, httpUserService)
 
 	// Run server
 	log.Fatal(http.ListenAndServe(":5000", router))
