@@ -63,7 +63,7 @@ func (ur *userRepository) Save(user *model.User) error {
 }
 
 type Account struct {
-	Id   string
+	ID   string
 	Name string
 }
 
@@ -79,18 +79,57 @@ func NewAccountRepository(db *gorm.DB) *accountRepository {
 
 // TODO: Implement "real" account repository functions
 func (ar *accountRepository) FindAll() ([]*model.Account, error) {
-	return nil, nil
+	var accounts []*Account
+
+	result := ar.db.Find(&accounts)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	response := make([]*model.Account, len(accounts))
+
+	for i, account := range accounts {
+		response[i] = model.NewAccount(account.ID, account.Name)
+	}
+
+	return response, nil
 }
 
 func (ar *accountRepository) FindByName(name string) (*model.Account, error) {
-	return nil, nil
+	var account Account
+	result := ar.db.Where("name = ?", name).Find(&account)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return model.NewAccount(account.ID, account.Name), nil
 }
 
-func (ar *accountRepository) FindById(id string) (*model.Account, error) {
-	return nil, nil
+func (ar *accountRepository) FindByID(id string) (*model.Account, error) {
+	var account Account
+	result := ar.db.Where("id = ?", id).Find(&account)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return model.NewAccount(account.ID, account.Name), nil
 }
 
 func (ar *accountRepository) Create(account *model.Account) error {
+	accountToInsert := Account{
+		ID:   account.GetId(),
+		Name: account.GetName(),
+	}
+
+	result := ar.db.Create(accountToInsert)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
 	return nil
 }
 

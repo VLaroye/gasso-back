@@ -64,7 +64,7 @@ func (u *accountUsecase) CreateAccount(name string) error {
 }
 
 func (u *accountUsecase) UpdateAccount(id, name string) error {
-	account, err := u.repo.FindById(id)
+	account, err := u.repo.FindByID(id)
 	if err != nil {
 		return err
 	}

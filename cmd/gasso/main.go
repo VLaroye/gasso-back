@@ -26,8 +26,15 @@ func main() {
 	userUsecase := usecase.NewUserUsecase(userRepo, userService)
 	httpUserService := httpInterface.NewUserService(userUsecase)
 
+	// Init account repo + service + usecase
+	accountRepo := db.NewAccountRepository(database)
+	accountService := service.NewAccountService(accountRepo)
+	accountUsecase := usecase.NewAccountUsecase(accountRepo, accountService)
+	httpAccountService := httpInterface.NewAccountService(accountUsecase)
+
 	// Handlers
 	httpInterface.RegisterUserHandlers(router, httpUserService)
+	httpInterface.RegisterAccountHandlers(router, httpAccountService)
 
 	// Run server
 	log.Fatal(http.ListenAndServe(":5000", router))
