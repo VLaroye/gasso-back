@@ -2,10 +2,11 @@ package http
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/VLaroye/gasso-back/app/domain/model"
 	"github.com/VLaroye/gasso-back/app/usecase"
 	"github.com/gorilla/mux"
-	"net/http"
 )
 
 func RegisterUserHandlers(router *mux.Router, service *userService) {
@@ -14,7 +15,7 @@ func RegisterUserHandlers(router *mux.Router, service *userService) {
 }
 
 type User struct {
-	ID string `json:"id"`
+	ID    string `json:"id"`
 	Email string `json:"email"`
 }
 
@@ -37,10 +38,10 @@ func toUsers(users []*model.User) []*User {
 
 func (u *userService) ListUsers(w http.ResponseWriter, r *http.Request) {
 	type listUsersResponseType struct {
-		Error error `json:"error"`
+		Error error   `json:"error"`
 		Users []*User `json:"users"`
 	}
-	
+
 	users, err := u.userUsecase.ListUsers()
 
 	if err != nil {
