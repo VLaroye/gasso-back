@@ -104,6 +104,10 @@ func (ar *accountRepository) FindByName(name string) (*model.Account, error) {
 		return nil, result.Error
 	}
 
+	if result.RowsAffected == 0 {
+		return nil, nil
+	}
+
 	return model.NewAccount(account.ID, account.Name), nil
 }
 

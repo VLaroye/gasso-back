@@ -11,6 +11,7 @@ import (
 
 func RegisterAccountHandlers(router *mux.Router, service *accountService) {
 	router.HandleFunc("/accounts", service.ListAccounts).Methods("GET")
+	router.HandleFunc("/accounts", service.CreateAccount).Methods("POST")
 }
 
 type Account struct {
@@ -54,4 +55,27 @@ func (u *accountService) ListAccounts(w http.ResponseWriter, r *http.Request) {
 	})
 
 	return
+}
+
+func (u *accountService) CreateAccount(w http.ResponseWriter, r *http.Request) {
+	type accountRequest struct {
+		Name string `json: name`
+	}
+
+	var request accountRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if request.Name == "" {
+		http.Error(w, "missing required 'name'", http.StatusBadRequest)
+		return
+	}
+
+	if err := u.accountUsecase.CreateAccount(request.Name); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
