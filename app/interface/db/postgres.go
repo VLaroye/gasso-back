@@ -63,8 +63,15 @@ func (ur *userRepository) Save(user *model.User) error {
 }
 
 type Account struct {
-	ID   string
+	ID   string `gorm:"primaryKey"`
 	Name string
+}
+
+func NewAccount(id, name string) *Account {
+	return &Account{
+		ID:   id,
+		Name: name,
+	}
 }
 
 type accountRepository struct {
@@ -77,7 +84,6 @@ func NewAccountRepository(db *gorm.DB) *accountRepository {
 	}
 }
 
-// TODO: Implement "real" account repository functions
 func (ar *accountRepository) FindAll() ([]*model.Account, error) {
 	var accounts []*Account
 
@@ -119,14 +125,15 @@ func (ar *accountRepository) FindByID(id string) (*model.Account, error) {
 		return nil, result.Error
 	}
 
+	if result.RowsAffected == 0 {
+		return nil, nil
+	}
+
 	return model.NewAccount(account.ID, account.Name), nil
 }
 
-func (ar *accountRepository) Create(account *model.Account) error {
-	accountToInsert := Account{
-		ID:   account.GetId(),
-		Name: account.GetName(),
-	}
+func (ar *accountRepository) Create(id, name string) error {
+	accountToInsert := NewAccount(id, name)
 
 	result := ar.db.Create(accountToInsert)
 
@@ -137,10 +144,24 @@ func (ar *accountRepository) Create(account *model.Account) error {
 	return nil
 }
 
-func (ar *accountRepository) Update(account *model.Account) error {
+func (ar *accountRepository) Update(id, name string) error {
+	accountToUpdate := NewAccount(id, name)
+
+	result := ar.db.Save(&accountToUpdate)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
 	return nil
 }
 
 func (ar *accountRepository) Delete(id string) error {
+	result := ar.db.Where("id = ?", id).Delete(&Account{})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
 	return nil
 }

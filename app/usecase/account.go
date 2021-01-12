@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"errors"
+
 	"github.com/VLaroye/gasso-back/app/domain/model"
 	"github.com/VLaroye/gasso-back/app/domain/repository"
 	"github.com/VLaroye/gasso-back/app/domain/service"
@@ -54,7 +56,7 @@ func (u *accountUsecase) CreateAccount(name string) error {
 
 	uuid := uuid2.New()
 
-	err := u.repo.Create(model.NewAccount(uuid.String(), name))
+	err := u.repo.Create(uuid.String(), name)
 
 	if err != nil {
 		return err
@@ -69,13 +71,15 @@ func (u *accountUsecase) UpdateAccount(id, name string) error {
 		return err
 	}
 
+	if account == nil {
+		return errors.New("account not found")
+	}
+
 	if err := u.service.Duplicated(name); err != nil {
 		return err
 	}
 
-	account.SetName(name)
-
-	err = u.repo.Update(account)
+	err = u.repo.Update(id, name)
 
 	if err != nil {
 		return err
