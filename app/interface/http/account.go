@@ -12,13 +12,14 @@ import (
 func RegisterAccountHandlers(router *mux.Router, service *accountService) {
 	router.HandleFunc("/accounts", service.ListAccounts).Methods("GET")
 	router.HandleFunc("/accounts", service.CreateAccount).Methods("POST")
+	router.HandleFunc("/accounts/{id}", service.GetAccountByID).Methods("GET")
 	router.HandleFunc("/accounts/{id}", service.UpdateAccount).Methods("POST")
 	router.HandleFunc("/accounts/{id}", service.DeleteAccount).Methods("DELETE")
 }
 
 type Account struct {
 	ID   string `json:"id"`
-	Name string `json:"email"`
+	Name string `json:"name"`
 }
 
 type accountService struct {
@@ -36,6 +37,26 @@ func toAccounts(accounts []*model.Account) []*Account {
 		result[i] = &Account{ID: account.GetId(), Name: account.GetName()}
 	}
 	return result
+}
+
+func (u *accountService) GetAccountByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	account, err := u.accountUsecase.GetAccountByID(id)
+
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if account == nil {
+		respondError(w, http.StatusNotFound, "account not found")
+		return
+	}
+
+	respondJSON(w, &Account{ID: account.GetId(), Name: account.GetName()})
+	return
 }
 
 func (u *accountService) ListAccounts(w http.ResponseWriter, r *http.Request) {

@@ -11,7 +11,7 @@ import (
 
 type AccountUsecase interface {
 	ListAccounts() ([]*model.Account, error)
-	GetAccountByName(name string) (*model.Account, error)
+	GetAccountByID(id string) (*model.Account, error)
 	CreateAccount(name string) error
 	UpdateAccount(id, name string) error
 	DeleteAccount(id string) error
@@ -39,8 +39,8 @@ func (u *accountUsecase) ListAccounts() ([]*model.Account, error) {
 	return accounts, nil
 }
 
-func (u *accountUsecase) GetAccountByName(name string) (*model.Account, error) {
-	account, err := u.repo.FindByName(name)
+func (u *accountUsecase) GetAccountByID(id string) (*model.Account, error) {
+	account, err := u.repo.FindByID(id)
 
 	if err != nil {
 		return nil, err
