@@ -9,6 +9,7 @@ import (
 	httpInterface "github.com/VLaroye/gasso-back/app/interface/http"
 	"github.com/VLaroye/gasso-back/app/usecase"
 	"github.com/gorilla/mux"
+	"go.uber.org/zap"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -20,6 +21,13 @@ func main() {
 		panic("failed to connect database")
 	}
 
+	zap, err := zap.NewProduction()
+	if err != nil {
+		panic("failed to launch logger")
+	}
+
+	logger := zap.Sugar()
+
 	// Init user repo + service + usecase
 	userRepo := db.NewUserRepository(database)
 	userService := service.NewUserService(userRepo)
@@ -27,7 +35,7 @@ func main() {
 	httpUserService := httpInterface.NewUserService(userUsecase)
 
 	// Init account repo + service + usecase
-	accountRepo := db.NewAccountRepository(database)
+	accountRepo := db.NewAccountRepository(database, logger)
 	accountService := service.NewAccountService(accountRepo)
 	accountUsecase := usecase.NewAccountUsecase(accountRepo, accountService)
 	httpAccountService := httpInterface.NewAccountService(accountUsecase)

@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/VLaroye/gasso-back/app/domain/model"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -75,12 +76,14 @@ func NewAccount(id, name string) *Account {
 }
 
 type accountRepository struct {
-	db *gorm.DB
+	db     *gorm.DB
+	logger *zap.SugaredLogger
 }
 
-func NewAccountRepository(db *gorm.DB) *accountRepository {
+func NewAccountRepository(db *gorm.DB, logger *zap.SugaredLogger) *accountRepository {
 	return &accountRepository{
-		db: db,
+		db:     db,
+		logger: logger,
 	}
 }
 
@@ -90,8 +93,15 @@ func (ar *accountRepository) FindAll() ([]*model.Account, error) {
 	result := ar.db.Find(&accounts)
 
 	if result.Error != nil {
+		ar.logger.Errorw("error fetching list accounts from db",
+			"error", result.Error,
+		)
 		return nil, result.Error
 	}
+
+	ar.logger.Infow("list accounts fetched from db",
+		"nb of accounts fetched", result.RowsAffected,
+	)
 
 	response := make([]*model.Account, len(accounts))
 
