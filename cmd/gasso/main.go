@@ -28,6 +28,8 @@ func main() {
 
 	logger := zap.Sugar()
 
+	router.Use(httpInterface.LoggingMiddleware(logger))
+
 	// Init user repo + service + usecase
 	userRepo := db.NewUserRepository(database)
 	userService := service.NewUserService(userRepo)
