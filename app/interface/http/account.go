@@ -13,7 +13,7 @@ func RegisterAccountHandlers(router *mux.Router, service *accountService) {
 	router.HandleFunc("/accounts", service.ListAccounts).Methods("GET")
 	router.HandleFunc("/accounts", service.CreateAccount).Methods("POST")
 	router.HandleFunc("/accounts/{id}", service.GetAccountByID).Methods("GET")
-	router.HandleFunc("/accounts/{id}", service.UpdateAccount).Methods("POST")
+	router.HandleFunc("/accounts/{id}", service.UpdateAccount).Methods("PUT")
 	router.HandleFunc("/accounts/{id}", service.DeleteAccount).Methods("DELETE")
 }
 
