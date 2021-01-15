@@ -117,13 +117,22 @@ func (ar *accountRepository) FindByName(name string) (*model.Account, error) {
 	result := ar.db.Where("name = ?", name).Find(&account)
 
 	if result.Error != nil {
+		ar.logger.Errorw("error fechting account by name",
+			"name", name,
+		)
 		return nil, result.Error
 	}
 
 	if result.RowsAffected == 0 {
+		ar.logger.Infow("find account by name failed, account not found",
+			"name", name,
+		)
 		return nil, nil
 	}
 
+	ar.logger.Infow("account fetched by name",
+		"name", name,
+	)
 	return model.NewAccount(account.ID, account.Name), nil
 }
 
@@ -132,13 +141,22 @@ func (ar *accountRepository) FindByID(id string) (*model.Account, error) {
 	result := ar.db.Where("id = ?", id).Find(&account)
 
 	if result.Error != nil {
+		ar.logger.Infow("find account by id failed, account not found",
+			"id", id,
+		)
 		return nil, result.Error
 	}
 
 	if result.RowsAffected == 0 {
+		ar.logger.Infow("find account by id failed, account not found",
+			"id", id,
+		)
 		return nil, nil
 	}
 
+	ar.logger.Infow("account fetched by id",
+		"id", id,
+	)
 	return model.NewAccount(account.ID, account.Name), nil
 }
 

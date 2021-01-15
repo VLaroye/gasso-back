@@ -19,9 +19,13 @@ func LoggingMiddleware(logger *zap.SugaredLogger) func(http.Handler) http.Handle
 				}
 			}()
 
+			logger.Infow("http request received",
+				"method", r.Method,
+				"path", r.URL.EscapedPath(),
+			)
 			start := time.Now()
 			next.ServeHTTP(w, r)
-			logger.Infow("request received",
+			logger.Infow("http response sent",
 				"method", r.Method,
 				"path", r.URL.EscapedPath(),
 				"duration", time.Since(start),
