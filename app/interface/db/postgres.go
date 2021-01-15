@@ -81,6 +81,7 @@ type accountRepository struct {
 }
 
 func NewAccountRepository(db *gorm.DB, logger *zap.SugaredLogger) *accountRepository {
+	logger.Debugw("creating postgres AccountRepository")
 	return &accountRepository{
 		db:     db,
 		logger: logger,
@@ -141,7 +142,7 @@ func (ar *accountRepository) FindByID(id string) (*model.Account, error) {
 	result := ar.db.Where("id = ?", id).Find(&account)
 
 	if result.Error != nil {
-		ar.logger.Infow("find account by id failed, account not found",
+		ar.logger.Errorw("find account by id failed, account not found",
 			"id", id,
 		)
 		return nil, result.Error
@@ -166,9 +167,17 @@ func (ar *accountRepository) Create(id, name string) error {
 	result := ar.db.Create(accountToInsert)
 
 	if result.Error != nil {
+		ar.logger.Errorw("create account failed",
+			"accountId", accountToInsert.ID,
+			"error", result.Error,
+		)
 		return result.Error
 	}
 
+	ar.logger.Infow("account created",
+		"id", accountToInsert.ID,
+		"name", accountToInsert.Name,
+	)
 	return nil
 }
 
@@ -178,9 +187,18 @@ func (ar *accountRepository) Update(id, name string) error {
 	result := ar.db.Save(&accountToUpdate)
 
 	if result.Error != nil {
+		ar.logger.Errorw("update account failed",
+			"accountId", id,
+			"accountName", name,
+			"error", result.Error,
+		)
 		return result.Error
 	}
 
+	ar.logger.Infow("account updated",
+		"id", accountToUpdate.ID,
+		"name", accountToUpdate.Name,
+	)
 	return nil
 }
 
@@ -188,8 +206,15 @@ func (ar *accountRepository) Delete(id string) error {
 	result := ar.db.Where("id = ?", id).Delete(&Account{})
 
 	if result.Error != nil {
+		ar.logger.Errorw("delete account failed",
+			"accountId", id,
+			"error", result.Error,
+		)
 		return result.Error
 	}
 
+	ar.logger.Infow("account deleted",
+		"id", id,
+	)
 	return nil
 }
