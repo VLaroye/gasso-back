@@ -125,7 +125,7 @@ func (ar *accountRepository) FindByName(name string) (*model.Account, error) {
 	}
 
 	if result.RowsAffected == 0 {
-		ar.logger.Infow("find account by name failed, account not found",
+		ar.logger.Infow("account not found",
 			"name", name,
 		)
 		return nil, nil
