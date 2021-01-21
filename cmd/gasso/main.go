@@ -1,11 +1,11 @@
 package main
 
 import (
+	"github.com/VLaroye/gasso-back/app/interface/db"
 	"log"
 	"net/http"
 
 	"github.com/VLaroye/gasso-back/app/domain/service"
-	"github.com/VLaroye/gasso-back/app/interface/db"
 	httpInterface "github.com/VLaroye/gasso-back/app/interface/http"
 	"github.com/VLaroye/gasso-back/app/usecase"
 	"github.com/gorilla/mux"

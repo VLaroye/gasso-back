@@ -19,7 +19,3 @@ func (a *Account) GetId() string {
 func (a *Account) GetName() string {
 	return a.name
 }
-
-func (a *Account) SetName(name string) {
-	a.name = name
-}
