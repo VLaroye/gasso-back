@@ -23,3 +23,31 @@ func NewInvoice(id, label string, amount int, receiptDate, dueDate time.Time, fr
 		to:          to,
 	}
 }
+
+func (invoice *Invoice) GetId() string {
+	return invoice.id
+}
+
+func (invoice *Invoice) GetAmount() int {
+	return invoice.amount
+}
+
+func (invoice *Invoice) GetLabel() string {
+	return invoice.label
+}
+
+func (invoice *Invoice) GetReceiptDate() time.Time {
+	return invoice.receiptDate
+}
+
+func (invoice *Invoice) GetDueDate() time.Time {
+	return invoice.dueDate
+}
+
+func (invoice *Invoice) GetTo() *Account {
+	return invoice.to
+}
+
+func (invoice *Invoice) GetFrom() *Account {
+	return invoice.from
+}

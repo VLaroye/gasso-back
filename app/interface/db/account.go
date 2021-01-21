@@ -7,7 +7,7 @@ import (
 )
 
 type Account struct {
-	ID   string `gorm:"primaryKey"`
+	ID   string
 	Name string
 }
 

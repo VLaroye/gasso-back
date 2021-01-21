@@ -22,6 +22,10 @@ type Account struct {
 	Name string `json:"name"`
 }
 
+func NewAccount(id, name string) *Account {
+	return &Account{ID: id, Name: name}
+}
+
 type accountService struct {
 	accountUsecase usecase.AccountUsecase
 }
