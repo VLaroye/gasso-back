@@ -107,7 +107,7 @@ func (ar *accountRepository) FindByID(id string) (*model.Account, error) {
 func (ar *accountRepository) Create(id, name string) error {
 	accountToInsert := NewAccount(id, name)
 
-	result := ar.db.Create(accountToInsert)
+	result := ar.db.Create(&accountToInsert)
 
 	if result.Error != nil {
 		ar.logger.Errorw("create account failed",

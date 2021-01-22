@@ -13,7 +13,7 @@ type UserUsecase interface {
 }
 
 type userUsecase struct {
-	repo repository.UserRepository
+	repo    repository.UserRepository
 	service *service.UserService
 }
 

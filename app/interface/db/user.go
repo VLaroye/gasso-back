@@ -2,7 +2,7 @@ package db
 
 import (
 	"github.com/VLaroye/gasso-back/app/domain/model"
-"gorm.io/gorm"
+	"gorm.io/gorm"
 )
 
 type User struct {

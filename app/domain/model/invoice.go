@@ -3,13 +3,13 @@ package model
 import "time"
 
 type Invoice struct {
-	id string
-	amount int
-	label string
+	id          string
+	amount      int
+	label       string
 	receiptDate time.Time
-	dueDate time.Time
-	from *Account
-	to *Account
+	dueDate     time.Time
+	from        *Account
+	to          *Account
 }
 
 func NewInvoice(id, label string, amount int, receiptDate, dueDate time.Time, from, to *Account) *Invoice {

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -11,19 +12,20 @@ import (
 
 func RegisterInvoiceHandlers(router *mux.Router, service *invoiceService) {
 	router.HandleFunc("/invoices", service.List).Methods("GET")
+	router.HandleFunc("/invoices", service.Create).Methods("POST")
 }
 
 type Invoice struct {
-	ID string `json:"id"`
-	Amount int `json:"amount"`
-	Label string `json:"label"`
+	ID          string    `json:"id"`
+	Amount      int       `json:"amount"`
+	Label       string    `json:"label"`
 	ReceiptDate time.Time `json:"receipt_date"`
-	DueDate time.Time `json:"due_date"`
-	From string `json:"from"`
-	To string `json:"to"`
+	DueDate     time.Time `json:"due_date"`
+	From        *Account    `json:"from"`
+	To          *Account    `json:"to"`
 }
 
-func NewInvoice(id, label string, amount int, receiptDate, dueDate time.Time, from, to string) *Invoice {
+func NewInvoice(id, label string, amount int, receiptDate, dueDate time.Time, from, to *Account) *Invoice {
 	return &Invoice{
 		ID:          id,
 		Amount:      amount,
@@ -36,11 +38,12 @@ func NewInvoice(id, label string, amount int, receiptDate, dueDate time.Time, fr
 }
 
 type invoiceService struct {
-	usecase usecase.InvoiceUsecase
+	usecase        usecase.InvoiceUsecase
+	accountUsecase usecase.AccountUsecase
 }
 
-func NewInvoiceService(usecase usecase.InvoiceUsecase) *invoiceService {
-	return &invoiceService{usecase: usecase}
+func NewInvoiceService(usecase usecase.InvoiceUsecase, accountUsecase usecase.AccountUsecase) *invoiceService {
+	return &invoiceService{usecase: usecase, accountUsecase: accountUsecase}
 }
 
 func toInvoices(invoices []*model.Invoice) []*Invoice {
@@ -53,8 +56,8 @@ func toInvoices(invoices []*model.Invoice) []*Invoice {
 			invoice.GetAmount(),
 			invoice.GetReceiptDate(),
 			invoice.GetDueDate(),
-			invoice.GetFrom().GetId(),
-			invoice.GetTo().GetId(),
+			NewAccount(invoice.GetFrom().GetId(), invoice.GetFrom().GetName()),
+			NewAccount(invoice.GetTo().GetId(), invoice.GetTo().GetName()),
 		)
 	}
 	return result
@@ -82,14 +85,65 @@ func (service *invoiceService) List(w http.ResponseWriter, r *http.Request) {
 
 func (service *invoiceService) Create(w http.ResponseWriter, r *http.Request) {
 	type invoiceRequest struct {
-		Label string `json:"label"`
-		Amount int `json:"amount"`
+		Label       string `json:"label"`
+		Amount      int    `json:"amount"`
 		ReceiptDate string `json:"receipt_date"`
-		DueDate string `json:"due_date"`
-		From string `json:"from"`
-		To string `json:"to"'`
+		DueDate     string `json:"due_date"`
+		From        string `json:"from"`
+		To          string `json:"to"'`
 	}
 
-	// TODO: Call usecase function, handle errors, respond
-}
+	var request invoiceRequest
 
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Check if accounts exist
+	from, err := service.accountUsecase.GetAccountByID(request.From)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if from == nil {
+		respondError(w, http.StatusBadRequest, "can't find 'from' account")
+		return
+	}
+
+	to, err := service.accountUsecase.GetAccountByID(request.To)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if to == nil {
+		respondError(w, http.StatusBadRequest, "can't find 'to' account")
+		return
+	}
+
+	// Check if dates are valid
+	receiptDate, err := time.Parse(time.RFC3339, request.ReceiptDate)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid 'receipt_date'")
+		return
+	}
+	dueDate, err := time.Parse(time.RFC3339, request.DueDate)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid 'due_date'")
+		return
+	}
+
+	// Create invoice
+	if err := service.usecase.Create(
+		request.Label,
+		request.Amount,
+		receiptDate,
+		dueDate,
+		from,
+		to,
+	); err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+}

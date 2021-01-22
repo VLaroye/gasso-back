@@ -4,15 +4,19 @@ import (
 	"github.com/VLaroye/gasso-back/app/domain/model"
 	"github.com/VLaroye/gasso-back/app/domain/repository"
 	"github.com/VLaroye/gasso-back/app/domain/service"
+	uuid2 "github.com/google/uuid"
+	"time"
 )
 
-type InvoiceUsecase interface{
+type InvoiceUsecase interface {
 	List() ([]*model.Invoice, error)
+	FindById(id string) (*model.Invoice, error)
+	Create(label string, amount int, receiptDate, dueDate time.Time, from, to *model.Account) error
 }
 
 type invoiceUsecase struct {
 	service *service.InvoiceService
-	repo repository.InvoiceRepository
+	repo    repository.InvoiceRepository
 }
 
 func NewInvoiceUsecase(service *service.InvoiceService, repo repository.InvoiceRepository) *invoiceUsecase {
@@ -31,8 +35,22 @@ func (u *invoiceUsecase) List() ([]*model.Invoice, error) {
 	return invoices, nil
 }
 
-func (u *invoiceUsecase) Create(label string, amount int, receiptDate, dueDate string, from, to string) error {
-	// TODO: 'Real' implementation of this function
-	return nil
+func (u *invoiceUsecase) FindById(id string) (*model.Invoice, error) {
+	invoice, err := u.repo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return invoice, nil
 }
 
+func (u *invoiceUsecase) Create(label string, amount int, receiptDate, dueDate time.Time, from, to *model.Account) error {
+	uuid := uuid2.New()
+
+	err := u.repo.Create(uuid.String(), label, amount , receiptDate, dueDate, from, to)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

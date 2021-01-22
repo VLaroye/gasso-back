@@ -40,7 +40,7 @@ func main() {
 
 	// Init invoice repo + service + usecase
 	invoiceUsecase := initInvoiceUsecase(database, logger)
-	httpInvoiceService := httpInterface.NewInvoiceService(invoiceUsecase)
+	httpInvoiceService := httpInterface.NewInvoiceService(invoiceUsecase, accountUsecase)
 
 	// Handlers
 	httpInterface.RegisterUserHandlers(router, httpUserService)
