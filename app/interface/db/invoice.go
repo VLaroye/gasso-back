@@ -13,8 +13,8 @@ type Invoice struct {
 	Label string
 	ReceiptDate time.Time
 	DueDate time.Time
-	From *Account
-	To *Account
+	From *Account `gorm:"foreignkey:ID"`
+	To *Account `gorm:"foreignkey:ID"`
 }
 
 func NewInvoice(id, label string, amount int, receiptDate, dueDate time.Time, from, to *Account) *Invoice {
@@ -42,14 +42,44 @@ func NewInvoiceRepository(db *gorm.DB, logger *zap.SugaredLogger) *invoiceReposi
 }
 
 func (ir *invoiceRepository) List() ([]*model.Invoice, error) {
-	return nil, nil
+	var invoices []*Invoice
+
+	result := ir.db.Find(&invoices)
+
+	if result.Error != nil {
+		ir.logger.Errorw("error fetching list invoices from db",
+			"error", result.Error,
+		)
+		return nil, result.Error
+	}
+
+	ir.logger.Infow("list invoices fetched from db",
+		"nb of invoices fetched", result.RowsAffected,
+	)
+
+	response := make([]*model.Invoice, len(invoices))
+
+	for i, invoice := range invoices {
+		response[i] = model.NewInvoice(
+			invoice.ID,
+			invoice.Label,
+			invoice.Amount,
+			invoice.ReceiptDate,
+			invoice.DueDate,
+			model.NewAccount(invoice.From.ID, invoice.From.Name),
+			model.NewAccount(invoice.To.ID, invoice.To.Name),
+		)
+	}
+
+	return response, nil
 }
 
 func (ir *invoiceRepository) FindByID(id string) (*model.Invoice, error) {
 	return nil, nil
 }
 
-func (ir *invoiceRepository) Create(invoice *model.Invoice) error {
+func (ir *invoiceRepository) Create(id, label string, amount int, receiptDate, dueDate time.Time, from, to string) error {
+	// TODO: Think about receive format here for dates (string ? Time ? ...), implement call to db
 	return nil
 }
 

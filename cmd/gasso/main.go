@@ -31,21 +31,43 @@ func main() {
 	router.Use(httpInterface.LoggingMiddleware(logger))
 
 	// Init user repo + service + usecase
-	userRepo := db.NewUserRepository(database)
-	userService := service.NewUserService(userRepo)
-	userUsecase := usecase.NewUserUsecase(userRepo, userService)
+	userUsecase := initUserUsecase(database)
 	httpUserService := httpInterface.NewUserService(userUsecase)
 
 	// Init account repo + service + usecase
-	accountRepo := db.NewAccountRepository(database, logger)
-	accountService := service.NewAccountService(accountRepo)
-	accountUsecase := usecase.NewAccountUsecase(accountRepo, accountService)
+	accountUsecase := initAccountUsecase(database, logger)
 	httpAccountService := httpInterface.NewAccountService(accountUsecase)
+
+	// Init invoice repo + service + usecase
+	invoiceUsecase := initInvoiceUsecase(database, logger)
+	httpInvoiceService := httpInterface.NewInvoiceService(invoiceUsecase)
 
 	// Handlers
 	httpInterface.RegisterUserHandlers(router, httpUserService)
 	httpInterface.RegisterAccountHandlers(router, httpAccountService)
+	httpInterface.RegisterInvoiceHandlers(router, httpInvoiceService)
 
 	// Run server
 	log.Fatal(http.ListenAndServe(":5000", router))
+}
+
+func initUserUsecase(database *gorm.DB) usecase.UserUsecase {
+	userRepo := db.NewUserRepository(database)
+	userService := service.NewUserService(userRepo)
+
+	return usecase.NewUserUsecase(userRepo, userService)
+}
+
+func initAccountUsecase(database *gorm.DB, logger *zap.SugaredLogger) usecase.AccountUsecase {
+	accountRepo := db.NewAccountRepository(database, logger)
+	accountService := service.NewAccountService(accountRepo)
+
+	return usecase.NewAccountUsecase(accountRepo, accountService)
+}
+
+func initInvoiceUsecase(database *gorm.DB, logger *zap.SugaredLogger) usecase.InvoiceUsecase {
+	invoiceRepo := db.NewInvoiceRepository(database, logger)
+	invoiceService := service.NewInvoiceService(invoiceRepo)
+
+	return usecase.NewInvoiceUsecase(invoiceService, invoiceRepo)
 }

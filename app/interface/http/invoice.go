@@ -19,11 +19,11 @@ type Invoice struct {
 	Label string `json:"label"`
 	ReceiptDate time.Time `json:"receipt_date"`
 	DueDate time.Time `json:"due_date"`
-	From *Account `json:"from"`
-	To *Account `json:"to"`
+	From string `json:"from"`
+	To string `json:"to"`
 }
 
-func NewInvoice(id, label string, amount int, receiptDate, dueDate time.Time, from, to *Account) *Invoice {
+func NewInvoice(id, label string, amount int, receiptDate, dueDate time.Time, from, to string) *Invoice {
 	return &Invoice{
 		ID:          id,
 		Amount:      amount,
@@ -53,8 +53,8 @@ func toInvoices(invoices []*model.Invoice) []*Invoice {
 			invoice.GetAmount(),
 			invoice.GetReceiptDate(),
 			invoice.GetDueDate(),
-			NewAccount(invoice.GetFrom().GetId(), invoice.GetFrom().GetName()),
-			NewAccount(invoice.GetTo().GetId(), invoice.GetTo().GetName()),
+			invoice.GetFrom().GetId(),
+			invoice.GetTo().GetId(),
 		)
 	}
 	return result
@@ -62,7 +62,7 @@ func toInvoices(invoices []*model.Invoice) []*Invoice {
 
 func (service *invoiceService) List(w http.ResponseWriter, r *http.Request) {
 	type invoiceResponse struct {
-		Invoices []*Invoice `json:"accounts"`
+		Invoices []*Invoice `json:"invoices"`
 	}
 
 	invoices, err := service.usecase.List()
@@ -78,5 +78,18 @@ func (service *invoiceService) List(w http.ResponseWriter, r *http.Request) {
 
 	respondJSON(w, response)
 	return
+}
+
+func (service *invoiceService) Create(w http.ResponseWriter, r *http.Request) {
+	type invoiceRequest struct {
+		Label string `json:"label"`
+		Amount int `json:"amount"`
+		ReceiptDate string `json:"receipt_date"`
+		DueDate string `json:"due_date"`
+		From string `json:"from"`
+		To string `json:"to"'`
+	}
+
+	// TODO: Call usecase function, handle errors, respond
 }
 

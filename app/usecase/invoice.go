@@ -31,3 +31,8 @@ func (u *invoiceUsecase) List() ([]*model.Invoice, error) {
 	return invoices, nil
 }
 
+func (u *invoiceUsecase) Create(label string, amount int, receiptDate, dueDate string, from, to string) error {
+	// TODO: 'Real' implementation of this function
+	return nil
+}
+
