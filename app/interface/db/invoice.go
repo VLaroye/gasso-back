@@ -56,8 +56,6 @@ func (ir *invoiceRepository) List() ([]*model.Invoice, error) {
 		return nil, result.Error
 	}
 
-	ir.logger.Infow("toto", "invoices", invoices)
-
 	ir.logger.Infow("list invoices fetched from db",
 		"nb of invoices fetched", result.RowsAffected,
 	)
