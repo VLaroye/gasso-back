@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/VLaroye/gasso-back/app/domain/model"
 	"github.com/VLaroye/gasso-back/app/usecase"
 	"github.com/gorilla/mux"
 )
@@ -21,8 +20,8 @@ type Invoice struct {
 	Label       string    `json:"label"`
 	ReceiptDate time.Time `json:"receipt_date"`
 	DueDate     time.Time `json:"due_date"`
-	From        *Account    `json:"from"`
-	To          *Account    `json:"to"`
+	From        *Account  `json:"from"`
+	To          *Account  `json:"to"`
 }
 
 func NewInvoice(id, label string, amount int, receiptDate, dueDate time.Time, from, to *Account) *Invoice {
@@ -46,37 +45,46 @@ func NewInvoiceService(usecase usecase.InvoiceUsecase, accountUsecase usecase.Ac
 	return &invoiceService{usecase: usecase, accountUsecase: accountUsecase}
 }
 
-func toInvoices(invoices []*model.Invoice) []*Invoice {
-	result := make([]*Invoice, len(invoices))
-
-	for i, invoice := range invoices {
-		result[i] = NewInvoice(
-			invoice.GetId(),
-			invoice.GetLabel(),
-			invoice.GetAmount(),
-			invoice.GetReceiptDate(),
-			invoice.GetDueDate(),
-			NewAccount(invoice.GetFrom().GetId(), invoice.GetFrom().GetName()),
-			NewAccount(invoice.GetTo().GetId(), invoice.GetTo().GetName()),
-		)
-	}
-	return result
-}
-
 func (service *invoiceService) List(w http.ResponseWriter, r *http.Request) {
 	type invoiceResponse struct {
 		Invoices []*Invoice `json:"invoices"`
 	}
 
 	invoices, err := service.usecase.List()
-
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	response := invoiceResponse{
-		Invoices: toInvoices(invoices),
+	response := make([]*Invoice, len(invoices))
+
+	for i, invoice := range invoices {
+		from, err := service.accountUsecase.GetAccountByID(invoice.GetFrom())
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		to, err := service.accountUsecase.GetAccountByID(invoice.GetTo())
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		if from == nil || to == nil {
+			respondError(w, http.StatusInternalServerError, "invoice's 'to' or 'from' field is invalid")
+			return
+		}
+
+		response[i] = NewInvoice(
+			invoice.GetId(),
+			invoice.GetLabel(),
+			invoice.GetAmount(),
+			invoice.GetReceiptDate(),
+			invoice.GetDueDate(),
+			NewAccount(from.GetId(), from.GetName()),
+			NewAccount(to.GetId(), to.GetName()),
+		)
 	}
 
 	respondJSON(w, response)
@@ -101,6 +109,7 @@ func (service *invoiceService) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if accounts exist
+	// TODO: Should be done on invoice usecase/service ?
 	from, err := service.accountUsecase.GetAccountByID(request.From)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
@@ -140,8 +149,8 @@ func (service *invoiceService) Create(w http.ResponseWriter, r *http.Request) {
 		request.Amount,
 		receiptDate,
 		dueDate,
-		from,
-		to,
+		from.GetId(),
+		to.GetId(),
 	); err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return

@@ -57,7 +57,7 @@ func (ir *invoiceRepository) List() ([]*model.Invoice, error) {
 	}
 
 	ir.logger.Infow("list invoices fetched from db",
-		"nb of invoices fetched", result.RowsAffected,
+		"nb of invoices fetched", result.RowsAffected, "invoices", invoices,
 	)
 
 	response := make([]*model.Invoice, len(invoices))
@@ -69,10 +69,14 @@ func (ir *invoiceRepository) List() ([]*model.Invoice, error) {
 			invoice.Amount,
 			invoice.ReceiptDate,
 			invoice.DueDate,
-			model.NewAccount(invoice.From.ID, invoice.From.Name),
-			model.NewAccount(invoice.To.ID, invoice.To.Name),
+			invoice.FromId,
+			invoice.ToId,
 		)
 	}
+
+	ir.logger.Infow("invoices converted to response",
+		"nb of invoices fetched", result.RowsAffected, "response", response,
+	)
 
 	return response, nil
 }
@@ -105,20 +109,20 @@ func (ir *invoiceRepository) FindByID(id string) (*model.Invoice, error) {
 		invoice.Amount,
 		invoice.ReceiptDate,
 		invoice.DueDate,
-		model.NewAccount(invoice.From.ID, invoice.From.Name),
-		model.NewAccount(invoice.To.ID, invoice.To.Name),
+		invoice.FromId,
+		invoice.ToId,
 	), nil
 }
 
-func (ir *invoiceRepository) Create(id, label string, amount int, receiptDate, dueDate time.Time, from, to *model.Account) error {
+func (ir *invoiceRepository) Create(id, label string, amount int, receiptDate, dueDate time.Time, from, to string) error {
 	invoiceToInsert := NewInvoice(
 		id,
 		label,
 		amount,
 		receiptDate,
 		dueDate,
-		from.GetId(),
-		to.GetId(),
+		from,
+		to,
 	)
 
 	result := ir.db.Create(&invoiceToInsert)
@@ -142,4 +146,36 @@ func (ir *invoiceRepository) Update(invoice *model.Invoice) error {
 
 func (ir *invoiceRepository) Delete(id string) error {
 	return nil
+}
+
+func (ir *invoiceRepository) ListByAccount(accountId string) ([]*model.Invoice, error) {
+	var invoices []*Invoice
+
+	result := ir.db.Preload("From", "ID <> ?", accountId).Find(&invoices)
+
+	if result.Error != nil {
+		ir.logger.Errorw("list invoices by account failed",
+			"accountId", accountId,
+			"error", result.Error,
+		)
+		return nil, result.Error
+	}
+
+	ir.logger.Infow("list invoices by account done", "result", result, "invoices", invoices)
+
+	response := make([]*model.Invoice, len(invoices))
+
+	for i, invoice := range invoices {
+		response[i] = model.NewInvoice(
+			invoice.ID,
+			invoice.Label,
+			invoice.Amount,
+			invoice.ReceiptDate,
+			invoice.DueDate,
+			invoice.FromId,
+			invoice.ToId,
+		)
+	}
+
+	return response, nil
 }

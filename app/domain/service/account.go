@@ -2,17 +2,18 @@ package service
 
 import (
 	"fmt"
-
 	"github.com/VLaroye/gasso-back/app/domain/repository"
 )
 
 type AccountService struct {
 	repo repository.AccountRepository
+	invoiceRepo repository.InvoiceRepository
 }
 
-func NewAccountService(repo repository.AccountRepository) *AccountService {
+func NewAccountService(repo repository.AccountRepository, invoiceRepo repository.InvoiceRepository) *AccountService {
 	return &AccountService{
 		repo: repo,
+		invoiceRepo: invoiceRepo,
 	}
 }
 
@@ -27,4 +28,13 @@ func (s *AccountService) Duplicated(name string) error {
 	}
 
 	return nil
+}
+
+func (s *AccountService) IsLinkedToInvoices(accountId string) (bool, error) {
+	invoices, err := s.invoiceRepo.ListByAccount(accountId)
+	if err != nil {
+		return false, err
+	}
+
+	return invoices != nil, nil
 }

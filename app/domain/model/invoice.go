@@ -8,11 +8,11 @@ type Invoice struct {
 	label       string
 	receiptDate time.Time
 	dueDate     time.Time
-	from        *Account
-	to          *Account
+	from        string
+	to          string
 }
 
-func NewInvoice(id, label string, amount int, receiptDate, dueDate time.Time, from, to *Account) *Invoice {
+func NewInvoice(id, label string, amount int, receiptDate, dueDate time.Time, from, to string) *Invoice {
 	return &Invoice{
 		id:          id,
 		amount:      amount,
@@ -44,10 +44,10 @@ func (invoice *Invoice) GetDueDate() time.Time {
 	return invoice.dueDate
 }
 
-func (invoice *Invoice) GetTo() *Account {
+func (invoice *Invoice) GetTo() string {
 	return invoice.to
 }
 
-func (invoice *Invoice) GetFrom() *Account {
+func (invoice *Invoice) GetFrom() string {
 	return invoice.from
 }

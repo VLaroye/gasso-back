@@ -117,12 +117,12 @@ func (u *accountService) UpdateAccount(w http.ResponseWriter, r *http.Request) {
 	var request accountRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	if err := u.accountUsecase.UpdateAccount(accountID, request.Name); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 }
@@ -132,7 +132,7 @@ func (u *accountService) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	accountID := vars["id"]
 
 	if err := u.accountUsecase.DeleteAccount(accountID); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 }

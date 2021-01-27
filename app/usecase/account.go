@@ -89,8 +89,18 @@ func (u *accountUsecase) UpdateAccount(id, name string) error {
 }
 
 func (u *accountUsecase) DeleteAccount(id string) error {
-	err := u.repo.Delete(id)
+	// Check if account is linked to invoices
+	// It it's the case, return an error
+	isLinkedToInvoices, err := u.service.IsLinkedToInvoices(id)
+	if err != nil {
+		return err
+	}
 
+	if isLinkedToInvoices {
+		return errors.New("account is linked to invoices")
+	}
+
+	err = u.repo.Delete(id)
 	if err != nil {
 		return err
 	}
