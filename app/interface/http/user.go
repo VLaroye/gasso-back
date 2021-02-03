@@ -16,7 +16,7 @@ import (
 
 func RegisterUserHandlers(router *mux.Router, service *userService) {
 	router.HandleFunc("/signin", service.Login).Methods("POST")
-	router.HandleFunc("/signup", service.RegisterUser).Methods("POST")
+	router.HandleFunc("/signup", service.Register).Methods("POST")
 	router.HandleFunc("/users", service.ListUsers).Methods("GET")
 }
 
@@ -96,6 +96,24 @@ func (u *userService) Login(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, nil)
 }
 
+func (u *userService) Register(w http.ResponseWriter, r *http.Request) {
+	type registerUserRequest struct {
+		Email    string
+		Password string
+	}
+
+	var request registerUserRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := u.userUsecase.RegisterUser(request.Email, request.Password); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func (u *userService) ListUsers(w http.ResponseWriter, _ *http.Request) {
 	type listUsersResponseType struct {
 		Error error   `json:"error"`
@@ -113,22 +131,4 @@ func (u *userService) ListUsers(w http.ResponseWriter, _ *http.Request) {
 		Users: toUsers(users),
 	})
 	return
-}
-
-func (u *userService) RegisterUser(w http.ResponseWriter, r *http.Request) {
-	type registerUserRequest struct {
-		Email    string
-		Password string
-	}
-
-	var request registerUserRequest
-
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := u.userUsecase.RegisterUser(request.Email, request.Password); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
 }
