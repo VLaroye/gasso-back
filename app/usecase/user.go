@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"fmt"
 	"github.com/VLaroye/gasso-back/app/domain/model"
 	"github.com/VLaroye/gasso-back/app/domain/repository"
 	"github.com/VLaroye/gasso-back/app/domain/service"
@@ -30,6 +31,10 @@ func (u *userUsecase) Login(email, password string) error {
 	user, err := u.repo.FindByEmail(email)
 	if err != nil {
 		return err
+	}
+
+	if user == nil {
+		return fmt.Errorf("user not found with email: %s", email)
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.GetPassword()), []byte(password)); err != nil {

@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"net/http"
 	"os"
@@ -60,8 +59,13 @@ func (u *userService) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if request.Email == "" || request.Password == "" {
+		respondError(w, http.StatusBadRequest, "email and password fields are required")
+		return
+	}
+
 	if err := u.userUsecase.Login(request.Email, request.Password); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		respondError(w, http.StatusUnauthorized, "invalid email or password")
 		return
 	}
 
@@ -82,7 +86,6 @@ func (u *userService) Login(w http.ResponseWriter, r *http.Request) {
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := jwtToken.SignedString([]byte(os.Getenv("JWT_KEY")))
 	if err != nil {
-		fmt.Println(err, os.Getenv("JWT_KEY"))
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -105,12 +108,17 @@ func (u *userService) Register(w http.ResponseWriter, r *http.Request) {
 	var request registerUserRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if request.Email == "" || request.Password == "" {
+		respondError(w, http.StatusBadRequest, "email and password fields are required")
 		return
 	}
 
 	if err := u.userUsecase.RegisterUser(request.Email, request.Password); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondError(w, http.StatusInternalServerError, err.Error())
 	}
 }
 
