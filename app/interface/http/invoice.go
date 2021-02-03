@@ -11,7 +11,7 @@ import (
 
 func RegisterInvoiceHandlers(router *mux.Router, service *invoiceService) {
 	router.HandleFunc("/invoices", AuthenticationNeeded(service.List)).Methods("GET")
-	router.HandleFunc("/invoices", service.Create).Methods("POST")
+	router.HandleFunc("/invoices", AuthenticationNeeded(service.Create)).Methods("POST")
 }
 
 type Invoice struct {

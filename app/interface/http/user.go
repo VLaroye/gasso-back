@@ -17,7 +17,7 @@ import (
 func RegisterUserHandlers(router *mux.Router, service *userService) {
 	router.HandleFunc("/signin", service.Login).Methods("POST")
 	router.HandleFunc("/signup", service.Register).Methods("POST")
-	router.HandleFunc("/users", service.ListUsers).Methods("GET")
+	router.HandleFunc("/users", AuthenticationNeeded(service.ListUsers)).Methods("GET")
 }
 
 type User struct {

@@ -10,11 +10,11 @@ import (
 )
 
 func RegisterAccountHandlers(router *mux.Router, service *accountService) {
-	router.HandleFunc("/accounts", service.ListAccounts).Methods("GET")
-	router.HandleFunc("/accounts", service.CreateAccount).Methods("POST")
-	router.HandleFunc("/accounts/{id}", service.GetAccountByID).Methods("GET")
-	router.HandleFunc("/accounts/{id}", service.UpdateAccount).Methods("PUT")
-	router.HandleFunc("/accounts/{id}", service.DeleteAccount).Methods("DELETE")
+	router.HandleFunc("/accounts", AuthenticationNeeded(service.ListAccounts)).Methods("GET")
+	router.HandleFunc("/accounts", AuthenticationNeeded(service.CreateAccount)).Methods("POST")
+	router.HandleFunc("/accounts/{id}", AuthenticationNeeded(service.GetAccountByID)).Methods("GET")
+	router.HandleFunc("/accounts/{id}", AuthenticationNeeded(service.UpdateAccount)).Methods("PUT")
+	router.HandleFunc("/accounts/{id}", AuthenticationNeeded(service.DeleteAccount)).Methods("DELETE")
 }
 
 type Account struct {
