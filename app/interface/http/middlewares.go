@@ -1,9 +1,9 @@
 package http
 
 import (
-	"github.com/dgrijalva/jwt-go"
+	"github.com/VLaroye/gasso-back/app/interface/http/response"
+	"github.com/VLaroye/gasso-back/app/interface/http/utils"
 	"net/http"
-	"os"
 	"time"
 
 	"go.uber.org/zap"
@@ -42,22 +42,21 @@ func AuthenticationNeeded(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tokenCookie, err := r.Cookie("token")
 		if err != nil {
-			respondError(w, http.StatusUnauthorized, err.Error())
+			response.JSON(
+				w,
+				http.StatusBadRequest,
+				response.ErrorResponse{Message: "error getting 'token' cookie from request", Status: http.StatusBadRequest},
+			)
 			return
 		}
 
-		tokenValue := tokenCookie.Value
-		claims := &JWTClaims{}
-
-		jwtToken, err := jwt.ParseWithClaims(tokenValue, claims, func(token *jwt.Token) (interface{}, error) {
-			return []byte(os.Getenv("JWT_KEY")), nil
-		})
-		if err != nil {
-			respondError(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-		if !jwtToken.Valid {
-			respondError(w, http.StatusUnauthorized, "invalid token")
+		isTokenValid, err := utils.ValidateJWTToken(tokenCookie.Value)
+		if err != nil || !isTokenValid {
+			response.JSON(
+				w,
+				http.StatusUnauthorized,
+				response.ErrorResponse{Message: "invalid token", Status: http.StatusUnauthorized},
+			)
 			return
 		}
 

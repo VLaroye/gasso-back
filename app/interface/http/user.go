@@ -2,15 +2,12 @@ package http
 
 import (
 	"encoding/json"
-	"github.com/dgrijalva/jwt-go"
-	"net/http"
-	"os"
-	"strconv"
-	"time"
-
 	"github.com/VLaroye/gasso-back/app/domain/model"
+	"github.com/VLaroye/gasso-back/app/interface/http/response"
+	"github.com/VLaroye/gasso-back/app/interface/http/utils"
 	"github.com/VLaroye/gasso-back/app/usecase"
 	"github.com/gorilla/mux"
+	"net/http"
 )
 
 func RegisterUserHandlers(router *mux.Router, service *userService) {
@@ -22,11 +19,6 @@ func RegisterUserHandlers(router *mux.Router, service *userService) {
 type User struct {
 	ID    string `json:"id"`
 	Email string `json:"email"`
-}
-
-type JWTClaims struct {
-	Email string `json:"email"`
-	jwt.StandardClaims
 }
 
 type userService struct {
@@ -55,48 +47,49 @@ func (u *userService) Login(w http.ResponseWriter, r *http.Request) {
 	var request signInRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: err.Error(), Status: http.StatusInternalServerError},
+		)
 		return
 	}
 
 	if request.Email == "" || request.Password == "" {
-		respondError(w, http.StatusBadRequest, "email and password fields are required")
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "email and password fields are required", Status: http.StatusBadRequest},
+		)
 		return
 	}
 
 	if err := u.userUsecase.Login(request.Email, request.Password); err != nil {
-		respondError(w, http.StatusUnauthorized, "invalid email or password")
+		response.JSON(
+			w,
+			http.StatusUnauthorized,
+			response.ErrorResponse{Message: "invalid email or password", Status: http.StatusUnauthorized},
+		)
 		return
 	}
 
-	jwtExpiracyDelay, err := strconv.Atoi(os.Getenv("JWT_EXPIRATION_DELAY"))
+	token, err := utils.NewJWToken(request.Email)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	tokenExpirationTime := time.Now().Add(time.Duration(jwtExpiracyDelay) * time.Minute)
-
-	claims := &JWTClaims{
-		Email: request.Email,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: tokenExpirationTime.Unix(),
-		},
-	}
-
-	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := jwtToken.SignedString([]byte(os.Getenv("JWT_KEY")))
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: "error generating auth token", Status: http.StatusInternalServerError},
+		)
 		return
 	}
 
 	http.SetCookie(w, &http.Cookie{
 		Name:    "token",
-		Value:   tokenString,
-		Expires: tokenExpirationTime,
+		Value:   token.SignedString,
+		Expires: token.Expires,
 	})
 
-	respondJSON(w, nil)
+	response.JSON(w, http.StatusOK, nil)
 }
 
 func (u *userService) Register(w http.ResponseWriter, r *http.Request) {
@@ -108,17 +101,42 @@ func (u *userService) Register(w http.ResponseWriter, r *http.Request) {
 	var request registerUserRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "error parsing request", Status: http.StatusBadRequest},
+		)
 		return
 	}
 
 	if request.Email == "" || request.Password == "" {
-		respondError(w, http.StatusBadRequest, "email and password fields are required")
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "email and password fields are required", Status: http.StatusBadRequest},
+		)
 		return
 	}
 
 	if err := u.userUsecase.RegisterUser(request.Email, request.Password); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: "error registering user", Status: http.StatusInternalServerError},
+		)
+	}
+}
+
+func (u *userService) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	// TODO: Finish implementing this method + Connect it to an API route
+	_, err := r.Cookie("token")
+	if err != nil {
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "can't get 'token' cookie from request", Status: http.StatusBadRequest},
+		)
+		return
 	}
 }
 

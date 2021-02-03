@@ -1,4 +1,4 @@
-package http
+package response
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ func NewErrorResponse(status int, message string) *ErrorResponse {
 	}
 }
 
-func respondError(w http.ResponseWriter, status int, message string) {
+func Error(w http.ResponseWriter, status int, message string) {
 	response := NewErrorResponse(status, message)
 
 	w.Header().Set("Content-Type", "application/json")

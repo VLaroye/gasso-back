@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"github.com/VLaroye/gasso-back/app/interface/http/response"
 	"net/http"
 	"time"
 
@@ -52,31 +53,47 @@ func (service *invoiceService) List(w http.ResponseWriter, r *http.Request) {
 
 	invoices, err := service.usecase.List()
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: "error listing invoices", Status: http.StatusInternalServerError},
+		)
 		return
 	}
 
-	response := make([]*Invoice, len(invoices))
+	resp := make([]*Invoice, len(invoices))
 
 	for i, invoice := range invoices {
 		from, err := service.accountUsecase.GetAccountByID(invoice.GetFrom())
 		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
+			response.JSON(
+				w,
+				http.StatusInternalServerError,
+				response.ErrorResponse{Message: "error getting invoice's 'from' account from db", Status: http.StatusInternalServerError},
+			)
 			return
 		}
 
 		to, err := service.accountUsecase.GetAccountByID(invoice.GetTo())
 		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
+			response.JSON(
+				w,
+				http.StatusInternalServerError,
+				response.ErrorResponse{Message: "error getting invoice's 'to' account from db", Status: http.StatusInternalServerError},
+			)
 			return
 		}
 
 		if from == nil || to == nil {
-			respondError(w, http.StatusInternalServerError, "invoice's 'to' or 'from' field is invalid")
+			response.JSON(
+				w,
+				http.StatusBadRequest,
+				response.ErrorResponse{Message: "invoice's 'to' or 'from' field is invalid", Status: http.StatusBadRequest},
+			)
 			return
 		}
 
-		response[i] = NewInvoice(
+		resp[i] = NewInvoice(
 			invoice.GetId(),
 			invoice.GetLabel(),
 			invoice.GetAmount(),
@@ -87,7 +104,7 @@ func (service *invoiceService) List(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	respondJSON(w, response)
+	response.JSON(w, http.StatusOK, resp)
 	return
 }
 
@@ -104,7 +121,11 @@ func (service *invoiceService) Create(w http.ResponseWriter, r *http.Request) {
 	var request invoiceRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "can't decode request", Status: http.StatusBadRequest},
+		)
 		return
 	}
 
@@ -112,34 +133,58 @@ func (service *invoiceService) Create(w http.ResponseWriter, r *http.Request) {
 	// TODO: Should be done on invoice usecase/service ?
 	from, err := service.accountUsecase.GetAccountByID(request.From)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: "error retrieving invoice's 'from' account", Status: http.StatusInternalServerError},
+		)
 		return
 	}
 	if from == nil {
-		respondError(w, http.StatusBadRequest, "can't find 'from' account")
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "can't find invoice's 'from' account", Status: http.StatusBadRequest},
+		)
 		return
 	}
 
 	to, err := service.accountUsecase.GetAccountByID(request.To)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: "error retrieving invoice's 'to' account", Status: http.StatusInternalServerError},
+		)
 		return
 	}
 
 	if to == nil {
-		respondError(w, http.StatusBadRequest, "can't find 'to' account")
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "can't find invoice's 'to' account", Status: http.StatusBadRequest},
+		)
 		return
 	}
 
 	// Check if dates are valid
 	receiptDate, err := time.Parse(time.RFC3339, request.ReceiptDate)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid 'receipt_date'")
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "invalid 'receipt_date'", Status: http.StatusBadRequest},
+		)
 		return
 	}
 	dueDate, err := time.Parse(time.RFC3339, request.DueDate)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid 'due_date'")
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "invalid 'due_date'", Status: http.StatusBadRequest},
+		)
 		return
 	}
 
@@ -152,7 +197,11 @@ func (service *invoiceService) Create(w http.ResponseWriter, r *http.Request) {
 		from.GetId(),
 		to.GetId(),
 	); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: "error creating invoice", Status: http.StatusInternalServerError},
+		)
 		return
 	}
 }
