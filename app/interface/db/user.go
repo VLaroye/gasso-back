@@ -8,6 +8,7 @@ import (
 type User struct {
 	ID    string
 	Email string
+	Password string
 }
 
 type userRepository struct {
@@ -29,7 +30,7 @@ func (ur *userRepository) FindAll() ([]*model.User, error) {
 	response := make([]*model.User, len(users))
 
 	for i, user := range users {
-		response[i] = model.NewUser(user.ID, user.Email)
+		response[i] = model.NewUser(user.ID, user.Email, user.Password)
 	}
 
 	return response, nil
@@ -46,13 +47,14 @@ func (ur *userRepository) FindByEmail(email string) (*model.User, error) {
 		return nil, result.Error
 	}
 
-	return model.NewUser(user.ID, user.Email), nil
+	return model.NewUser(user.ID, user.Email, user.Password), nil
 }
 
 func (ur *userRepository) Save(user *model.User) error {
 	result := ur.db.Create(&User{
 		ID:    user.GetId(),
 		Email: user.GetEmail(),
+		Password: user.GetPassword(),
 	})
 
 	if result.Error != nil {

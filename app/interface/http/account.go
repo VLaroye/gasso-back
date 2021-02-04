@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"github.com/VLaroye/gasso-back/app/interface/http/response"
 	"net/http"
 
 	"github.com/VLaroye/gasso-back/app/domain/model"
@@ -10,11 +11,11 @@ import (
 )
 
 func RegisterAccountHandlers(router *mux.Router, service *accountService) {
-	router.HandleFunc("/accounts", service.ListAccounts).Methods("GET")
-	router.HandleFunc("/accounts", service.CreateAccount).Methods("POST")
-	router.HandleFunc("/accounts/{id}", service.GetAccountByID).Methods("GET")
-	router.HandleFunc("/accounts/{id}", service.UpdateAccount).Methods("PUT")
-	router.HandleFunc("/accounts/{id}", service.DeleteAccount).Methods("DELETE")
+	router.HandleFunc("/accounts", AuthenticationNeeded(service.ListAccounts)).Methods("GET")
+	router.HandleFunc("/accounts", AuthenticationNeeded(service.CreateAccount)).Methods("POST")
+	router.HandleFunc("/accounts/{id}", AuthenticationNeeded(service.GetAccountByID)).Methods("GET")
+	router.HandleFunc("/accounts/{id}", AuthenticationNeeded(service.UpdateAccount)).Methods("PUT")
+	router.HandleFunc("/accounts/{id}", AuthenticationNeeded(service.DeleteAccount)).Methods("DELETE")
 }
 
 type Account struct {
@@ -50,16 +51,24 @@ func (u *accountService) GetAccountByID(w http.ResponseWriter, r *http.Request) 
 	account, err := u.accountUsecase.GetAccountByID(id)
 
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: "error getting account from db", Status: http.StatusInternalServerError},
+		)
 		return
 	}
 
 	if account == nil {
-		respondError(w, http.StatusNotFound, "account not found")
+		response.JSON(
+			w,
+			http.StatusNotFound,
+			response.ErrorResponse{Message: "account not found", Status: http.StatusNotFound},
+		)
 		return
 	}
 
-	respondJSON(w, &Account{ID: account.GetId(), Name: account.GetName()})
+	response.JSON(w, http.StatusOK, &Account{ID: account.GetId(), Name: account.GetName()})
 	return
 }
 
@@ -71,15 +80,19 @@ func (u *accountService) ListAccounts(w http.ResponseWriter, r *http.Request) {
 	accounts, err := u.accountUsecase.ListAccounts()
 
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: "error getting accounts from db", Status: http.StatusInternalServerError},
+		)
 		return
 	}
 
-	response := accountResponse{
+	resp := accountResponse{
 		Accounts: toAccounts(accounts),
 	}
 
-	respondJSON(w, response)
+	response.JSON(w, http.StatusOK, resp)
 	return
 }
 
@@ -91,17 +104,29 @@ func (u *accountService) CreateAccount(w http.ResponseWriter, r *http.Request) {
 	var request accountRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "error decoding request", Status: http.StatusBadRequest},
+		)
 		return
 	}
 
 	if request.Name == "" {
-		respondError(w, http.StatusBadRequest, "missing required 'name'")
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "missing required 'name'", Status: http.StatusBadRequest},
+		)
 		return
 	}
 
 	if err := u.accountUsecase.CreateAccount(request.Name); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: "error creating account", Status: http.StatusInternalServerError},
+		)
 		return
 	}
 }
@@ -117,12 +142,20 @@ func (u *accountService) UpdateAccount(w http.ResponseWriter, r *http.Request) {
 	var request accountRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "error decoding request", Status: http.StatusBadRequest},
+		)
 		return
 	}
 
 	if err := u.accountUsecase.UpdateAccount(accountID, request.Name); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: "error updating account", Status: http.StatusInternalServerError},
+		)
 		return
 	}
 }
@@ -132,7 +165,11 @@ func (u *accountService) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	accountID := vars["id"]
 
 	if err := u.accountUsecase.DeleteAccount(accountID); err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: "error deleting account", Status: http.StatusInternalServerError},
+		)
 		return
 	}
 }

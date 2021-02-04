@@ -40,7 +40,7 @@ func Start(port int, database *gorm.DB) {
 	sugaredLogger := logger.Sugar()
 	router := mux.NewRouter()
 
-	router.Use(LoggingMiddleware(sugaredLogger))
+	router.Use(Logging(sugaredLogger))
 
 	repo := initRepository(database, sugaredLogger)
 	sv := initService(repo)
@@ -90,4 +90,3 @@ func initUsecase(repo *Repository, service *Service) *Usecase {
 		InvoiceUsecase: usecase.NewInvoiceUsecase(repo.InvoiceRepo, service.InvoiceService),
 	}
 }
-

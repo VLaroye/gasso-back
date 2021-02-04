@@ -3,12 +3,14 @@ package model
 type User struct {
 	id    string
 	email string
+	password string
 }
 
-func NewUser(id, email string) *User {
+func NewUser(id, email, password string) *User {
 	return &User{
 		id:    id,
 		email: email,
+		password: password,
 	}
 }
 
@@ -18,4 +20,8 @@ func (u *User) GetId() string {
 
 func (u *User) GetEmail() string {
 	return u.email
+}
+
+func (u *User) GetPassword() string {
+	return u.password
 }
