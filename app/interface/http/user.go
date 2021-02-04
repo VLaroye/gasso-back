@@ -13,6 +13,7 @@ import (
 func RegisterUserHandlers(router *mux.Router, service *userService) {
 	router.HandleFunc("/signin", service.Login).Methods("POST")
 	router.HandleFunc("/signup", service.Register).Methods("POST")
+	router.HandleFunc("/refresh", service.RefreshToken).Methods("GET")
 	router.HandleFunc("/users", AuthenticationNeeded(service.ListUsers)).Methods("GET")
 }
 
@@ -88,8 +89,6 @@ func (u *userService) Login(w http.ResponseWriter, r *http.Request) {
 		Value:   token.SignedString,
 		Expires: token.Expires,
 	})
-
-	response.JSON(w, http.StatusOK, nil)
 }
 
 func (u *userService) Register(w http.ResponseWriter, r *http.Request) {
@@ -128,16 +127,46 @@ func (u *userService) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *userService) RefreshToken(w http.ResponseWriter, r *http.Request) {
-	// TODO: Finish implementing this method + Connect it to an API route
-	_, err := r.Cookie("token")
+	// 1 - GET token from request
+	tokenCookie, err := r.Cookie("token")
 	if err != nil {
 		response.JSON(
 			w,
 			http.StatusBadRequest,
-			response.ErrorResponse{Message: "can't get 'token' cookie from request", Status: http.StatusBadRequest},
+			response.ErrorResponse{Message: "error getting 'token' cookie from request", Status: http.StatusBadRequest},
 		)
 		return
 	}
+
+	tokenValue := tokenCookie.Value
+
+	// 2 - Validate token
+	token, err := utils.ParseJWTToken(tokenValue)
+	if err != nil {
+		response.JSON(
+			w,
+			http.StatusBadRequest,
+			response.ErrorResponse{Message: "invalid token", Status: http.StatusBadRequest},
+		)
+		return
+	}
+
+	// 3 - Create a new token
+	newToken, err := utils.NewJWToken(token.Claims.Email)
+	if err != nil {
+		response.JSON(
+			w,
+			http.StatusInternalServerError,
+			response.ErrorResponse{Message: "error creating new token", Status: http.StatusInternalServerError},
+		)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:    "token",
+		Value:   newToken.SignedString,
+		Expires: newToken.Expires,
+	})
 }
 
 func (u *userService) ListUsers(w http.ResponseWriter, _ *http.Request) {

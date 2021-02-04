@@ -1,13 +1,14 @@
 package utils
 
 import (
+	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"os"
 	"strconv"
 	"time"
 )
 
-type JWToken struct {
+type JWTToken struct {
 	Token *jwt.Token
 	SignedString string
 	Expires time.Time
@@ -28,7 +29,7 @@ func NewClaims(email string, expirationTime time.Time) *Claims {
 	}
 }
 
-func NewJWToken(email string) (*JWToken, error) {
+func NewJWToken(email string) (*JWTToken, error) {
 	jwtExpiryDelay, err := strconv.Atoi(os.Getenv("JWT_EXPIRATION_DELAY"))
 	if err != nil {
 		return nil, err
@@ -43,7 +44,7 @@ func NewJWToken(email string) (*JWToken, error) {
 		return nil, err
 	}
 
-	return &JWToken{
+	return &JWTToken{
 		Token:        token,
 		SignedString: signedString,
 		Expires:      expires,
@@ -57,7 +58,38 @@ func ValidateJWTToken(receivedToken string) (bool, error){
 	jwtToken, err := jwt.ParseWithClaims(receivedToken, claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWT_KEY")), nil
 	})
+	if err != nil {
+		return false, err
+	}
 
 	return jwtToken.Valid, err
 }
 
+func ParseJWTToken(receivedToken string) (*JWTToken, error){
+	claims := &Claims{}
+
+	jwtToken, err := jwt.ParseWithClaims(receivedToken, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_KEY")), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	signedString, err := jwtToken.SignedString([]byte(os.Getenv("JWT_KEY")))
+	if err != nil {
+		return nil, err
+	}
+
+	if !jwtToken.Valid {
+		return nil, errors.New("invalid token")
+	}
+
+	token := &JWTToken{
+		Token:        jwtToken,
+		SignedString: signedString,
+		Expires:      time.Unix(claims.ExpiresAt, 0),
+		Claims:       claims,
+	}
+
+	return token, err
+}
